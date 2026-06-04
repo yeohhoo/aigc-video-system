@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { VolcengineClient } from '../../integrations/volcengine/volcengine.client';
+import { AI_PROVIDER, AIProvider } from '../../integrations/provider.interface';
 import { CreateCreationDto } from './dto/create-creation.dto';
 import {
   CreationAspectRatio,
@@ -14,7 +14,7 @@ import {
 export class CreationService {
   private readonly tasks: CreationTask[] = [];
 
-  constructor(private readonly volcengineClient: VolcengineClient) {}
+  constructor(@Inject(AI_PROVIDER) private readonly provider: AIProvider) {}
 
   list(): CreationTask[] {
     return [...this.tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -58,7 +58,7 @@ export class CreationService {
     return task;
   }
 
-  start(id: string): CreationTask {
+  async start(id: string): Promise<CreationTask> {
     const task = this.getById(id);
     const now = new Date().toISOString();
 
@@ -66,7 +66,7 @@ export class CreationService {
     task.progress = 35;
     task.updatedAt = now;
 
-    task.scenes = task.scenes.map((scene) => this.completeScene(task, scene));
+    task.scenes = await Promise.all(task.scenes.map((scene) => this.completeScene(task, scene)));
     task.status = 'completed';
     task.progress = 100;
     task.previewUrl = `https://mock.cdn.local/previews/${task.id}.mp4`;
@@ -108,18 +108,28 @@ export class CreationService {
     }));
   }
 
-  private completeScene(task: CreationTask, scene: CreationScene): CreationScene {
-    // Future integration point: call Volcengine text-to-image, text-to-video,
-    // image-to-video and TTS APIs through this.volcengineClient.
-    const provider = Boolean(this.volcengineClient) ? 'mock-volcengine-adapter' : 'mock';
+  private async completeScene(task: CreationTask, scene: CreationScene): Promise<CreationScene> {
+    const image = await this.provider.generateImage({
+      prompt: scene.visualPrompt,
+      aspectRatio: task.aspectRatio,
+    });
+    const video = await this.provider.generateVideoFromImage({
+      imageUrl: image.imageUrl,
+      prompt: scene.visualPrompt,
+    });
+    const speech = await this.provider.generateSpeech({
+      text: scene.narration,
+      language: task.language,
+      voiceStyle: task.voiceStyle,
+    });
 
     return {
       ...scene,
       status: 'completed',
-      provider,
-      imageUrl: `https://mock.cdn.local/creations/${task.id}/scene-${scene.order}.jpg`,
-      videoClipUrl: `https://mock.cdn.local/creations/${task.id}/scene-${scene.order}.mp4`,
-      ttsUrl: `https://mock.cdn.local/creations/${task.id}/scene-${scene.order}.mp3`,
+      provider: this.provider.name,
+      imageUrl: image.imageUrl,
+      videoClipUrl: video.videoUrl,
+      ttsUrl: speech.audioUrl,
     };
   }
 

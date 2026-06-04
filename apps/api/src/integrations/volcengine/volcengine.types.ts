@@ -20,3 +20,17 @@ export interface TextToSpeechRequest {
   voice?: string;
   speed?: number;
 }
+
+export interface VolcengineRequest {
+  operation: string;
+  endpoint: string;
+  apiKeyConfigured: boolean;
+  payload: unknown;
+}
+
+export interface VolcengineResponse {
+  provider: string;
+  operation: string;
+  url: string;
+  raw: unknown;
+}

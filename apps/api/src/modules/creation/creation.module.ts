@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { VolcengineModule } from '../../integrations/volcengine/volcengine.module';
+import { ProviderModule } from '../../integrations/provider.module';
 import { CreationController } from './creation.controller';
 import { CreationService } from './creation.service';
 
 @Module({
-  imports: [VolcengineModule],
+  imports: [ProviderModule],
   controllers: [CreationController],
   providers: [CreationService],
 })
