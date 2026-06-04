@@ -98,12 +98,64 @@ export interface ScriptSummary {
   createdAt: string;
 }
 
-export type CreationTaskStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type CreationStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+export type CreationAspectRatio = '9:16' | '16:9' | '1:1';
+
+export type CreationResolution = '720p' | '1080p';
+
+export type CreationLanguage = 'zh' | 'en';
+
+export interface CreationScene {
+  id: string;
+  order: number;
+  scriptSceneId: string;
+  visualPrompt: string;
+  narration: string;
+  imageUrl?: string;
+  videoClipUrl?: string;
+  ttsUrl?: string;
+  durationSeconds: number;
+  status: CreationStatus;
+  provider: string;
+}
+
+export interface CreationTask {
+  id: string;
+  scriptId: string;
+  materialId: string;
+  title: string;
+  status: CreationStatus;
+  progress: number;
+  aspectRatio: CreationAspectRatio;
+  resolution: CreationResolution;
+  language: CreationLanguage;
+  voiceStyle?: string;
+  bgmStyle?: string;
+  scenes: CreationScene[];
+  previewUrl?: string;
+  exportUrl?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCreationDto {
+  scriptId: string;
+  materialId: string;
+  title: string;
+  aspectRatio: CreationAspectRatio;
+  resolution: CreationResolution;
+  language: CreationLanguage;
+  voiceStyle?: string;
+  bgmStyle?: string;
+}
 
 export interface CreationTaskSummary {
   id: string;
   title: string;
   materialId: string;
   scriptId: string;
-  status: CreationTaskStatus;
+  status: CreationStatus;
+  progress: number;
 }

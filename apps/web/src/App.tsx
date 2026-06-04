@@ -1,3 +1,4 @@
+import { CreationPanel } from './modules/creation/CreationPanel';
 import { MaterialPanel } from './modules/material/MaterialPanel';
 import { ScriptPanel } from './modules/script/ScriptPanel';
 
@@ -13,6 +14,7 @@ export function App() {
 
       <MaterialPanel />
       <ScriptPanel />
+      <CreationPanel />
     </main>
   );
 }
