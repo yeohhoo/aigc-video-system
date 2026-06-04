@@ -1,6 +1,4 @@
-import { CreationPanel } from './modules/creation/CreationPanel';
 import { MaterialPanel } from './modules/material/MaterialPanel';
-import { ScriptPanel } from './modules/script/ScriptPanel';
 
 export function App() {
   return (
@@ -12,11 +10,7 @@ export function App() {
         </div>
       </header>
 
-      <section className="module-grid" aria-label="核心模块">
-        <MaterialPanel />
-        <ScriptPanel />
-        <CreationPanel />
-      </section>
+      <MaterialPanel />
     </main>
   );
 }
