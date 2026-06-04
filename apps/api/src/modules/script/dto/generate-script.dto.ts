@@ -1,3 +1,5 @@
+import { ScriptGenerationMode } from '../script.types';
+
 export class GenerateScriptDto {
   materialId!: string;
   productName!: string;
@@ -7,4 +9,7 @@ export class GenerateScriptDto {
   usageScenario!: string;
   durationSeconds?: number;
   promptAdjustment?: string;
+  mode?: ScriptGenerationMode;
+  referenceVideoId?: string;
+  templateId?: string;
 }

@@ -128,11 +128,19 @@ h1 {
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
 }
 
+.inspiration-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .material-form,
 .material-list,
 .script-form,
 .script-list,
 .script-detail,
+.reference-panel,
+.template-panel,
 .creation-form,
 .creation-list,
 .creation-detail {
@@ -154,6 +162,8 @@ h1 {
 .script-form h3,
 .script-list h3,
 .script-detail h3,
+.reference-panel h3,
+.template-panel h3,
 .creation-form h3,
 .creation-list h3,
 .creation-detail h3 {
@@ -253,6 +263,7 @@ textarea {
 }
 
 .script-items,
+.reference-items,
 .scene-list,
 .creation-items,
 .creation-scene-list {
@@ -326,6 +337,7 @@ textarea {
 }
 
 .script-select,
+.inspiration-select,
 .task-select {
   background: transparent;
   color: #20242c;
@@ -338,11 +350,31 @@ textarea {
 }
 
 .script-meta-line,
+.inspiration-meta-line,
 .task-meta-line,
 .detail-heading p,
 .detail-grid p,
 .scene-card p,
 .creation-scene-card p {
+  color: #566070;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.inspiration-detail {
+  background: #f8fafc;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.inspiration-detail h4 {
+  font-size: 16px;
+}
+
+.inspiration-detail p {
   color: #566070;
   line-height: 1.6;
   overflow-wrap: anywhere;
@@ -447,6 +479,7 @@ textarea {
 
   .material-layout,
   .script-layout,
+  .inspiration-layout,
   .creation-layout,
   .workspace-heading {
     grid-template-columns: 1fr;

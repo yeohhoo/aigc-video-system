@@ -6,6 +6,26 @@ import { ScriptService } from './script.service';
 export class ScriptController {
   constructor(private readonly scriptService: ScriptService) {}
 
+  @Get('references')
+  listReferences() {
+    return this.scriptService.listReferences();
+  }
+
+  @Get('references/:id')
+  getReferenceById(@Param('id') id: string) {
+    return this.scriptService.getReferenceById(id);
+  }
+
+  @Get('templates')
+  listTemplates() {
+    return this.scriptService.listTemplates();
+  }
+
+  @Get('templates/:id')
+  getTemplateById(@Param('id') id: string) {
+    return this.scriptService.getTemplateById(id);
+  }
+
   @Get()
   list() {
     return this.scriptService.list();
