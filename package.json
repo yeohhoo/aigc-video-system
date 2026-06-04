@@ -7,8 +7,8 @@
     "dev": "pnpm -r --parallel dev",
     "dev:web": "pnpm --filter @aigc-video/web dev",
     "dev:api": "pnpm --filter @aigc-video/api dev",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
+    "build": "pnpm -r --workspace-concurrency=1 build",
+    "lint": "pnpm -r --workspace-concurrency=1 lint",
     "format": "prettier --write .",
     "stylelint": "stylelint \"apps/web/src/**/*.{css,scss}\"",
     "prepare": "husky"

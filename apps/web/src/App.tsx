@@ -1,4 +1,5 @@
 import { MaterialPanel } from './modules/material/MaterialPanel';
+import { ScriptPanel } from './modules/script/ScriptPanel';
 
 export function App() {
   return (
@@ -11,6 +12,7 @@ export function App() {
       </header>
 
       <MaterialPanel />
+      <ScriptPanel />
     </main>
   );
 }
