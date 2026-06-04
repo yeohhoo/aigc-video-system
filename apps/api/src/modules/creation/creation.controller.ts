@@ -11,6 +11,21 @@ export class CreationController {
     return this.creationService.list();
   }
 
+  @Get(':id/progress')
+  getProgress(@Param('id') id: string) {
+    return this.creationService.getProgress(id);
+  }
+
+  @Get(':id/traces')
+  getTraces(@Param('id') id: string) {
+    return this.creationService.getTraces(id);
+  }
+
+  @Get(':id/diagnostics')
+  getDiagnostics(@Param('id') id: string) {
+    return this.creationService.getDiagnostics(id);
+  }
+
   @Get(':id')
   getById(@Param('id') id: string) {
     return this.creationService.getById(id);
@@ -24,6 +39,16 @@ export class CreationController {
   @Post(':id/start')
   start(@Param('id') id: string) {
     return this.creationService.start(id);
+  }
+
+  @Post(':id/retry')
+  retry(@Param('id') id: string) {
+    return this.creationService.retry(id);
+  }
+
+  @Post(':id/cancel')
+  cancel(@Param('id') id: string) {
+    return this.creationService.cancel(id);
   }
 
   @Delete(':id')

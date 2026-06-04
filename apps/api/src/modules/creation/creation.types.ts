@@ -1,4 +1,4 @@
-export type CreationStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type CreationStatus = 'pending' | 'queued' | 'running' | 'completed' | 'failed' | 'canceled';
 
 export type CreationAspectRatio = '9:16' | '16:9' | '1:1';
 
@@ -12,6 +12,30 @@ export interface RenderTrace {
   status: CreationStatus;
   startedAt: string;
   finishedAt: string;
+}
+
+export interface TaskTrace {
+  id: string;
+  taskId: string;
+  provider: string;
+  step: string;
+  status: CreationStatus;
+  message: string;
+  startedAt: string;
+  finishedAt: string;
+}
+
+export interface CreationDiagnostics {
+  taskId: string;
+  totalDurationMs: number;
+  stepDurations: Array<{
+    step: string;
+    durationMs: number;
+    status: CreationStatus;
+  }>;
+  failed: boolean;
+  errorMessage?: string;
+  provider: string;
 }
 
 export interface CreationScene {
@@ -46,6 +70,7 @@ export interface CreationTask {
   voiceStyle?: string;
   bgmStyle?: string;
   scenes: CreationScene[];
+  traces: TaskTrace[];
   previewUrl?: string;
   exportUrl?: string;
   errorMessage?: string;

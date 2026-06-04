@@ -511,6 +511,44 @@ textarea {
   text-align: center;
 }
 
+.status-flow {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.status-step {
+  background: #edf2f7;
+  border: 1px solid #d8dee9;
+  border-radius: 999px;
+  color: #566070;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.status-step-active {
+  background: #e8f5ef;
+  border-color: #a9cfbf;
+  color: #245646;
+}
+
+.progress-track {
+  background: #e3e9f1;
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: #256f5b;
+  display: block;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
 .asset-grid {
   display: grid;
   gap: 10px;
@@ -552,6 +590,58 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.observability-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.observability-panel {
+  background: #f8fafc;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.observability-panel h4 {
+  font-size: 16px;
+}
+
+.task-trace-list {
+  display: grid;
+  gap: 8px;
+}
+
+.task-trace-item {
+  background: #fff;
+  border-radius: 6px;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.task-trace-item p,
+.diagnostic-card p {
+  color: #566070;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-card,
+.diagnostic-steps {
+  display: grid;
+  gap: 8px;
+}
+
+.diagnostic-step {
+  background: #fff;
+  border-radius: 999px;
+  color: #3d4a5c;
+  font-size: 13px;
+  padding: 7px 10px;
+}
+
 @media (width <= 820px) {
   .app-shell {
     padding: 28px 16px;
@@ -563,6 +653,8 @@ textarea {
   .intervention-grid,
   .creation-layout,
   .pipeline-strip,
+  .status-flow,
+  .observability-grid,
   .workspace-heading {
     grid-template-columns: 1fr;
   }

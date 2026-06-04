@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { AI_PROVIDER, AIProvider } from '../../integrations/provider.interface';
-import { CreationScene, CreationTask, RenderTrace } from './creation.types';
+import { CreationScene, CreationTask, RenderTrace, TaskTrace } from './creation.types';
 
 interface PipelineResult {
   scenes: CreationScene[];
   previewUrl: string;
   exportUrl: string;
+  traces: TaskTrace[];
 }
 
 @Injectable()
@@ -14,17 +16,35 @@ export class CreationPipelineService {
 
   async run(task: CreationTask): Promise<PipelineResult> {
     const scenes: CreationScene[] = [];
+    const traces: TaskTrace[] = [];
 
     for (const scene of task.scenes) {
-      scenes.push(await this.renderScene(task, scene));
+      const rendered = await this.renderScene(task, scene);
+      scenes.push(rendered);
+      traces.push(...this.toTaskTraces(task.id, rendered.renderTrace));
     }
 
-    const finalVideo = this.composeFinalVideo(task);
+    const finalVideo = this.traceTaskSync(task.id, 'composeFinalVideo', 'mock-composer', () =>
+      this.composeFinalVideo(task),
+    );
 
     return {
       scenes,
       previewUrl: finalVideo.previewUrl,
       exportUrl: finalVideo.exportUrl,
+      traces: [
+        ...traces,
+        {
+          id: randomUUID(),
+          taskId: task.id,
+          provider: 'mock-composer',
+          step: 'composeFinalVideo',
+          status: 'completed',
+          message: 'Final video composed with mock preview and export URLs.',
+          startedAt: finalVideo.startedAt,
+          finishedAt: finalVideo.finishedAt,
+        },
+      ],
     };
   }
 
@@ -46,7 +66,9 @@ export class CreationPipelineService {
       }),
     );
 
-    const subtitle = this.generateSubtitle(task, scene);
+    const subtitle = this.traceSync(renderTrace, 'generateSubtitle', () =>
+      this.generateSubtitle(task, scene),
+    );
 
     await this.trace(renderTrace, 'generateVideo', async () =>
       this.provider.generateVideoFromImage({
@@ -104,9 +126,37 @@ export class CreationPipelineService {
     return result;
   }
 
+  private traceTaskSync<T extends object>(
+    taskId: string,
+    step: string,
+    provider: string,
+    operation: () => T,
+  ): T & { startedAt: string; finishedAt: string } {
+    const startedAt = new Date().toISOString();
+    const result = operation();
+    return {
+      ...result,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    };
+  }
+
+  private toTaskTraces(taskId: string, traces: RenderTrace[]): TaskTrace[] {
+    return traces.map((trace) => ({
+      id: randomUUID(),
+      taskId,
+      provider: trace.provider,
+      step: trace.step,
+      status: trace.status,
+      message: `${trace.step} completed by ${trace.provider}.`,
+      startedAt: trace.startedAt,
+      finishedAt: trace.finishedAt,
+    }));
+  }
+
   private generateSubtitle(task: CreationTask, scene: CreationScene) {
     const subtitleText = scene.narration
-      .split(/[，。,.]/)
+      .split(/[，。！？,.!?]/)
       .map((line) => line.trim())
       .filter(Boolean)
       .join('\n');
