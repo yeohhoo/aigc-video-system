@@ -39,11 +39,7 @@ export function CreationPanel() {
 
     try {
       const response = await fetch('/api/creations');
-
-      if (!response.ok) {
-        throw new Error('创作任务列表获取失败');
-      }
-
+      if (!response.ok) throw new Error('创作任务列表获取失败');
       const data = (await response.json()) as CreationTask[];
       setTasks(data);
       setSelectedTask((current) => current ?? data[0] ?? null);
@@ -62,16 +58,10 @@ export function CreationPanel() {
     try {
       const response = await fetch('/api/creations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-
-      if (!response.ok) {
-        throw new Error('创作任务创建失败');
-      }
-
+      if (!response.ok) throw new Error('创作任务创建失败');
       const created = (await response.json()) as CreationTask;
       setTasks((current) => [created, ...current]);
       setSelectedTask(created);
@@ -88,13 +78,8 @@ export function CreationPanel() {
 
     try {
       const response = await fetch(`/api/creations/${id}`);
-
-      if (!response.ok) {
-        throw new Error('创作任务详情获取失败');
-      }
-
-      const detail = (await response.json()) as CreationTask;
-      setSelectedTask(detail);
+      if (!response.ok) throw new Error('创作任务详情获取失败');
+      setSelectedTask((await response.json()) as CreationTask);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '创作任务详情获取失败');
     }
@@ -105,19 +90,13 @@ export function CreationPanel() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/creations/${id}/start`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('模拟生成启动失败');
-      }
-
+      const response = await fetch(`/api/creations/${id}/start`, { method: 'POST' });
+      if (!response.ok) throw new Error('智能剪辑流水线启动失败');
       const completed = (await response.json()) as CreationTask;
       setTasks((current) => current.map((task) => (task.id === id ? completed : task)));
       setSelectedTask(completed);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '模拟生成启动失败');
+      setError(requestError instanceof Error ? requestError.message : '智能剪辑流水线启动失败');
     } finally {
       setRunningTaskId(null);
     }
@@ -127,14 +106,8 @@ export function CreationPanel() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/creations/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('创作任务删除失败');
-      }
-
+      const response = await fetch(`/api/creations/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('创作任务删除失败');
       setTasks((current) => current.filter((task) => task.id !== id));
       setSelectedTask((current) => (current?.id === id ? null : current));
     } catch (requestError) {
@@ -146,8 +119,10 @@ export function CreationPanel() {
     <section className="creation-workspace" aria-label="视频创作任务">
       <div className="workspace-heading">
         <div>
-          <h2>视频创作任务</h2>
-          <p>根据剧本创建视频生成任务，并用 mock 链路模拟分镜图片、视频片段和 TTS 产物。</p>
+          <h2>智能剪辑流水线</h2>
+          <p>
+            模拟 Script Scene 到 Image、TTS、Subtitle、Video Segment 和 Final Video 的完整链路。
+          </p>
         </div>
         <span className="count-badge creation-count">{taskCountText}</span>
       </div>
@@ -155,37 +130,30 @@ export function CreationPanel() {
       <div className="creation-layout">
         <form className="creation-form" onSubmit={handleCreate}>
           <h3>创建任务</h3>
-
           <label>
             <span>剧本 ID</span>
             <input
               value={form.scriptId}
               onChange={(event) => setForm({ ...form, scriptId: event.target.value })}
-              placeholder="从剧本详情复制 scriptId"
               required
             />
           </label>
-
           <label>
             <span>素材 ID</span>
             <input
               value={form.materialId}
               onChange={(event) => setForm({ ...form, materialId: event.target.value })}
-              placeholder="素材库中的 materialId"
               required
             />
           </label>
-
           <label>
             <span>标题</span>
             <input
               value={form.title}
               onChange={(event) => setForm({ ...form, title: event.target.value })}
-              placeholder="例如：夏季防晒衣投放版"
               required
             />
           </label>
-
           <label>
             <span>画幅</span>
             <select
@@ -199,7 +167,6 @@ export function CreationPanel() {
               <option value="1:1">1:1</option>
             </select>
           </label>
-
           <label>
             <span>分辨率</span>
             <select
@@ -212,7 +179,6 @@ export function CreationPanel() {
               <option value="720p">720p</option>
             </select>
           </label>
-
           <label>
             <span>语言</span>
             <select
@@ -225,25 +191,22 @@ export function CreationPanel() {
               <option value="en">English</option>
             </select>
           </label>
-
           <label>
             <span>声音风格</span>
             <input
               value={form.voiceStyle}
               onChange={(event) => setForm({ ...form, voiceStyle: event.target.value })}
-              placeholder="清爽女声、自然口播"
+              placeholder="自然口播"
             />
           </label>
-
           <label>
             <span>BGM 风格</span>
             <input
               value={form.bgmStyle}
               onChange={(event) => setForm({ ...form, bgmStyle: event.target.value })}
-              placeholder="轻快电商、TikTok 节奏"
+              placeholder="轻快电商"
             />
           </label>
-
           <button type="submit" disabled={isCreating}>
             {isCreating ? '创建中...' : '创建创作任务'}
           </button>
@@ -256,14 +219,8 @@ export function CreationPanel() {
               刷新
             </button>
           </div>
-
           {error ? <p className="error-message">{error}</p> : null}
           {isLoading ? <p className="empty-state">正在加载创作任务...</p> : null}
-
-          {!isLoading && tasks.length === 0 ? (
-            <p className="empty-state">暂无创作任务，先根据剧本创建一个 mock 生成任务。</p>
-          ) : null}
-
           <div className="creation-items">
             {tasks.map((task) => (
               <article className="creation-item" key={task.id}>
@@ -283,7 +240,7 @@ export function CreationPanel() {
                     disabled={runningTaskId === task.id || task.status === 'completed'}
                     onClick={() => void handleStart(task.id)}
                   >
-                    {runningTaskId === task.id ? '生成中...' : '启动'}
+                    {runningTaskId === task.id ? '生成中...' : '启动流水线'}
                   </button>
                   <button type="button" onClick={() => void handleDelete(task.id)}>
                     删除
@@ -308,23 +265,12 @@ export function CreationPanel() {
             <span className="detail-duration">{selectedTask.progress}%</span>
           </div>
 
-          <div className="detail-grid">
-            <div>
-              <strong>剧本 ID</strong>
-              <p>{selectedTask.scriptId}</p>
-            </div>
-            <div>
-              <strong>素材 ID</strong>
-              <p>{selectedTask.materialId}</p>
-            </div>
-            <div>
-              <strong>声音风格</strong>
-              <p>{selectedTask.voiceStyle || '未设置'}</p>
-            </div>
-            <div>
-              <strong>BGM 风格</strong>
-              <p>{selectedTask.bgmStyle || '未设置'}</p>
-            </div>
+          <div className="pipeline-strip">
+            <span className="pipeline-step">Scene Render</span>
+            <span className="pipeline-step">TTS Generate</span>
+            <span className="pipeline-step">Subtitle Generate</span>
+            <span className="pipeline-step">Segment Compose</span>
+            <span className="pipeline-step">Final Compose</span>
           </div>
 
           <div className="export-links">
@@ -340,30 +286,43 @@ export function CreationPanel() {
                   <h4>{scene.scriptSceneId}</h4>
                   <strong className="scene-duration">{scene.status}</strong>
                 </div>
-                <p>
-                  <strong>画面提示：</strong>
-                  {scene.visualPrompt}
-                </p>
-                <p>
-                  <strong>口播：</strong>
-                  {scene.narration}
-                </p>
-                <p>
-                  <strong>图片：</strong>
-                  {scene.imageUrl || '待生成'}
-                </p>
-                <p>
-                  <strong>视频片段：</strong>
-                  {scene.videoClipUrl || '待生成'}
-                </p>
-                <p>
-                  <strong>TTS：</strong>
-                  {scene.ttsUrl || '待生成'}
-                </p>
-                <p>
-                  <strong>Provider：</strong>
-                  {scene.provider}
-                </p>
+                <div className="asset-grid">
+                  <div>
+                    <strong>Image</strong>
+                    <p>{scene.imageUrl || '待生成'}</p>
+                  </div>
+                  <div>
+                    <strong>TTS</strong>
+                    <p>{scene.ttsUrl || '待生成'}</p>
+                  </div>
+                  <div>
+                    <strong>Subtitle</strong>
+                    <p>{scene.subtitleText || '待生成'}</p>
+                    <p>{scene.subtitleFileUrl || ''}</p>
+                  </div>
+                  <div>
+                    <strong>BGM</strong>
+                    <p>{scene.bgmStyle || '待生成'}</p>
+                    <p>{scene.bgmUrl || ''}</p>
+                  </div>
+                  <div>
+                    <strong>Video Segment</strong>
+                    <p>{scene.videoClipUrl || '待生成'}</p>
+                  </div>
+                </div>
+                <div className="trace-list">
+                  {scene.renderTrace.map((trace) => (
+                    <div
+                      className="trace-item"
+                      key={`${scene.id}-${trace.step}-${trace.startedAt}`}
+                    >
+                      <strong>{trace.step}</strong>
+                      <span className="trace-meta">{trace.provider}</span>
+                      <span className="trace-meta">{trace.status}</span>
+                      <span className="trace-meta">{trace.finishedAt}</span>
+                    </div>
+                  ))}
+                </div>
               </article>
             ))}
           </div>

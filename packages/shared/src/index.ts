@@ -151,6 +151,14 @@ export type CreationResolution = '720p' | '1080p';
 
 export type CreationLanguage = 'zh' | 'en';
 
+export interface RenderTrace {
+  provider: string;
+  step: string;
+  status: CreationStatus;
+  startedAt: string;
+  finishedAt: string;
+}
+
 export interface CreationScene {
   id: string;
   order: number;
@@ -160,6 +168,11 @@ export interface CreationScene {
   imageUrl?: string;
   videoClipUrl?: string;
   ttsUrl?: string;
+  subtitleText?: string;
+  subtitleFileUrl?: string;
+  bgmStyle?: string;
+  bgmUrl?: string;
+  renderTrace: RenderTrace[];
   durationSeconds: number;
   status: CreationStatus;
   provider: string;

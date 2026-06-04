@@ -5,7 +5,18 @@ import type {
   ReferenceVideo,
   Script,
   ScriptGenerationMode,
+  ScriptScene,
 } from '@aigc-video/shared';
+
+interface SceneForm {
+  title: string;
+  narration: string;
+  visualPrompt: string;
+  cameraMovement: string;
+  bgmSuggestion: string;
+  caption: string;
+  durationSeconds: number;
+}
 
 const emptyForm: GenerateScriptDto = {
   materialId: '',
@@ -19,6 +30,16 @@ const emptyForm: GenerateScriptDto = {
   mode: 'auto_strategy',
   referenceVideoId: '',
   templateId: '',
+};
+
+const emptySceneForm: SceneForm = {
+  title: '',
+  narration: '',
+  visualPrompt: '',
+  cameraMovement: '',
+  bgmSuggestion: '',
+  caption: '',
+  durationSeconds: 3,
 };
 
 const modeLabels: Record<ScriptGenerationMode, string> = {
@@ -36,6 +57,18 @@ export function ScriptPanel() {
   const [selectedTemplate, setSelectedTemplate] = useState<InspirationTemplate | null>(null);
   const [form, setForm] = useState<GenerateScriptDto>(emptyForm);
   const [sellingPointInput, setSellingPointInput] = useState('');
+  const [scriptEdit, setScriptEdit] = useState({
+    title: '',
+    targetAudience: '',
+    sellingPoints: '',
+  });
+  const [sceneForm, setSceneForm] = useState<SceneForm>(emptySceneForm);
+  const [promptAdjustment, setPromptAdjustment] = useState('');
+  const [factorReplacement, setFactorReplacement] = useState({
+    visualStyle: '',
+    bgmStyle: '',
+    captionStyle: '',
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,25 +79,31 @@ export function ScriptPanel() {
     void loadInitialData();
   }, []);
 
+  useEffect(() => {
+    if (selectedScript) {
+      setScriptEdit({
+        title: selectedScript.title,
+        targetAudience: selectedScript.targetAudience,
+        sellingPoints: selectedScript.sellingPoints.join(', '),
+      });
+    }
+  }, [selectedScript]);
+
   async function loadInitialData() {
     setIsLoading(true);
     setError(null);
-
     try {
       const [scriptResponse, referenceResponse, templateResponse] = await Promise.all([
         fetch('/api/scripts'),
         fetch('/api/scripts/references'),
         fetch('/api/scripts/templates'),
       ]);
-
       if (!scriptResponse.ok || !referenceResponse.ok || !templateResponse.ok) {
         throw new Error('剧本资源获取失败');
       }
-
       const scriptData = (await scriptResponse.json()) as Script[];
       const referenceData = (await referenceResponse.json()) as ReferenceVideo[];
       const templateData = (await templateResponse.json()) as InspirationTemplate[];
-
       setScripts(scriptData);
       setReferences(referenceData);
       setTemplates(templateData);
@@ -83,36 +122,45 @@ export function ScriptPanel() {
     }
   }
 
+  async function requestScript(url: string, init: RequestInit) {
+    const response = await fetch(url, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init.headers,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('剧本操作失败');
+    }
+    const updated = (await response.json()) as Script;
+    setSelectedScript(updated);
+    setScripts((current) => {
+      const exists = current.some((script) => script.id === updated.id);
+      return exists
+        ? current.map((script) => (script.id === updated.id ? updated : script))
+        : [updated, ...current];
+    });
+    return updated;
+  }
+
   async function handleGenerate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsGenerating(true);
     setError(null);
-
-    const payload: GenerateScriptDto = {
-      ...form,
-      durationSeconds: Number(form.durationSeconds || 15),
-      sellingPoints: sellingPointInput
-        .split(',')
-        .map((point) => point.trim())
-        .filter(Boolean),
-    };
-
     try {
-      const response = await fetch('/api/scripts/generate', {
+      const payload: GenerateScriptDto = {
+        ...form,
+        durationSeconds: Number(form.durationSeconds || 15),
+        sellingPoints: sellingPointInput
+          .split(',')
+          .map((point) => point.trim())
+          .filter(Boolean),
+      };
+      await requestScript('/api/scripts/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        throw new Error('剧本生成失败');
-      }
-
-      const generated = (await response.json()) as Script;
-      setScripts((current) => [generated, ...current]);
-      setSelectedScript(generated);
       setForm((current) => ({
         ...emptyForm,
         referenceVideoId: current.referenceVideoId,
@@ -128,16 +176,10 @@ export function ScriptPanel() {
 
   async function handleSelectScript(id: string) {
     setError(null);
-
     try {
       const response = await fetch(`/api/scripts/${id}`);
-
-      if (!response.ok) {
-        throw new Error('剧本详情获取失败');
-      }
-
-      const detail = (await response.json()) as Script;
-      setSelectedScript(detail);
+      if (!response.ok) throw new Error('剧本详情获取失败');
+      setSelectedScript((await response.json()) as Script);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : '剧本详情获取失败');
     }
@@ -145,16 +187,9 @@ export function ScriptPanel() {
 
   async function handleDelete(id: string) {
     setError(null);
-
     try {
-      const response = await fetch(`/api/scripts/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('剧本删除失败');
-      }
-
+      const response = await fetch(`/api/scripts/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('剧本删除失败');
       setScripts((current) => current.filter((script) => script.id !== id));
       setSelectedScript((current) => (current?.id === id ? null : current));
     } catch (requestError) {
@@ -165,17 +200,84 @@ export function ScriptPanel() {
   async function handleSelectReference(id: string) {
     setForm((current) => ({ ...current, referenceVideoId: id }));
     const response = await fetch(`/api/scripts/references/${id}`);
-    if (response.ok) {
-      setSelectedReference((await response.json()) as ReferenceVideo);
-    }
+    if (response.ok) setSelectedReference((await response.json()) as ReferenceVideo);
   }
 
   async function handleSelectTemplate(id: string) {
     setForm((current) => ({ ...current, templateId: id }));
     const response = await fetch(`/api/scripts/templates/${id}`);
-    if (response.ok) {
-      setSelectedTemplate((await response.json()) as InspirationTemplate);
+    if (response.ok) setSelectedTemplate((await response.json()) as InspirationTemplate);
+  }
+
+  async function handleUpdateScript(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedScript) return;
+    await requestScript(`/api/scripts/${selectedScript.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        title: scriptEdit.title,
+        targetAudience: scriptEdit.targetAudience,
+        sellingPoints: scriptEdit.sellingPoints
+          .split(',')
+          .map((point) => point.trim())
+          .filter(Boolean),
+      }),
+    });
+  }
+
+  async function handleAddScene(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedScript) return;
+    await requestScript(`/api/scripts/${selectedScript.id}/scenes`, {
+      method: 'POST',
+      body: JSON.stringify(sceneForm),
+    });
+    setSceneForm(emptySceneForm);
+  }
+
+  async function handlePatchScene(scene: ScriptScene, patch: Partial<ScriptScene>) {
+    if (!selectedScript) return;
+    await requestScript(`/api/scripts/${selectedScript.id}/scenes/${scene.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  }
+
+  async function handleRemoveScene(sceneId: string) {
+    if (!selectedScript) return;
+    const response = await fetch(`/api/scripts/${selectedScript.id}/scenes/${sceneId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      setError('分镜删除失败');
+      return;
     }
+    const detail = await fetch(`/api/scripts/${selectedScript.id}`);
+    if (detail.ok) {
+      const updated = (await detail.json()) as Script;
+      setSelectedScript(updated);
+      setScripts((current) =>
+        current.map((script) => (script.id === updated.id ? updated : script)),
+      );
+    }
+  }
+
+  async function handleRegenerate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedScript) return;
+    await requestScript(`/api/scripts/${selectedScript.id}/regenerate`, {
+      method: 'POST',
+      body: JSON.stringify({
+        promptAdjustment,
+        factorReplacement: {
+          visualStyle: factorReplacement.visualStyle || undefined,
+          bgmStyle: factorReplacement.bgmStyle || undefined,
+          captionStyle: factorReplacement.captionStyle || undefined,
+        },
+      }),
+    });
+    setPromptAdjustment('');
+    setFactorReplacement({ visualStyle: '', bgmStyle: '', captionStyle: '' });
   }
 
   return (
@@ -183,13 +285,13 @@ export function ScriptPanel() {
       <div className="workspace-heading">
         <div>
           <h2>剧本生成</h2>
-          <p>从参考视频和灵感模板提炼方法论，再生成 15 秒内的带货短视频分镜。</p>
+          <p>支持参考视频、灵感模板、AI 生成与人工干预的短视频剧本生产。</p>
         </div>
         <span className="count-badge script-count">{scriptCountText}</span>
       </div>
 
       <div className="inspiration-layout">
-        <section className="reference-panel" aria-label="参考视频分析">
+        <section className="reference-panel">
           <div className="list-toolbar">
             <h3>参考视频分析</h3>
             <span>{references.length} 条</span>
@@ -214,16 +316,11 @@ export function ScriptPanel() {
               <h4>{selectedReference.title}</h4>
               <p>{selectedReference.hookPattern}</p>
               <p>{selectedReference.sellingPointStructure.join(' -> ')}</p>
-              <div className="tag-row">
-                {selectedReference.visualStyle.map((style) => (
-                  <span key={style}>{style}</span>
-                ))}
-              </div>
             </div>
           ) : null}
         </section>
 
-        <section className="template-panel" aria-label="灵感模板">
+        <section className="template-panel">
           <div className="list-toolbar">
             <h3>灵感模板</h3>
             <span>{templates.length} 个</span>
@@ -246,11 +343,6 @@ export function ScriptPanel() {
               <h4>{selectedTemplate.name}</h4>
               <p>{selectedTemplate.factors.opening}</p>
               <p>{selectedTemplate.factors.visualFocus}</p>
-              <div className="tag-row">
-                {selectedTemplate.suitableFor.map((category) => (
-                  <span key={category}>{category}</span>
-                ))}
-              </div>
             </div>
           ) : null}
         </section>
@@ -259,7 +351,6 @@ export function ScriptPanel() {
       <div className="script-layout">
         <form className="script-form" onSubmit={handleGenerate}>
           <h3>生成参数</h3>
-
           <label>
             <span>生成模式</span>
             <select
@@ -273,7 +364,6 @@ export function ScriptPanel() {
               <option value="template_based">灵感模板</option>
             </select>
           </label>
-
           <label>
             <span>参考视频</span>
             <select
@@ -287,7 +377,6 @@ export function ScriptPanel() {
               ))}
             </select>
           </label>
-
           <label>
             <span>灵感模板</span>
             <select
@@ -301,57 +390,46 @@ export function ScriptPanel() {
               ))}
             </select>
           </label>
-
           <label>
             <span>素材 ID</span>
             <input
               value={form.materialId}
               onChange={(event) => setForm({ ...form, materialId: event.target.value })}
-              placeholder="从素材列表复制素材 ID"
               required
             />
           </label>
-
           <label>
             <span>商品名称</span>
             <input
               value={form.productName}
               onChange={(event) => setForm({ ...form, productName: event.target.value })}
-              placeholder="例如：夏季防晒衣"
               required
             />
           </label>
-
           <label>
             <span>商品类目</span>
             <input
               value={form.productCategory}
               onChange={(event) => setForm({ ...form, productCategory: event.target.value })}
-              placeholder="服饰鞋包"
               required
             />
           </label>
-
           <label>
             <span>目标人群</span>
             <input
               value={form.targetAudience}
               onChange={(event) => setForm({ ...form, targetAudience: event.target.value })}
-              placeholder="通勤女性、户外人群"
               required
             />
           </label>
-
           <label>
             <span>使用场景</span>
             <input
               value={form.usageScenario}
               onChange={(event) => setForm({ ...form, usageScenario: event.target.value })}
-              placeholder="夏季通勤、防晒出游"
               required
             />
           </label>
-
           <label>
             <span>卖点</span>
             <input
@@ -361,7 +439,6 @@ export function ScriptPanel() {
               required
             />
           </label>
-
           <label>
             <span>视频时长</span>
             <input
@@ -374,16 +451,6 @@ export function ScriptPanel() {
               }
             />
           </label>
-
-          <label>
-            <span>风格调整</span>
-            <input
-              value={form.promptAdjustment}
-              onChange={(event) => setForm({ ...form, promptAdjustment: event.target.value })}
-              placeholder="更活泼、更高级、更适合 TikTok Shop"
-            />
-          </label>
-
           <button type="submit" disabled={isGenerating}>
             {isGenerating ? '生成中...' : '生成剧本'}
           </button>
@@ -396,14 +463,8 @@ export function ScriptPanel() {
               刷新
             </button>
           </div>
-
           {error ? <p className="error-message">{error}</p> : null}
           {isLoading ? <p className="empty-state">正在加载剧本资源...</p> : null}
-
-          {!isLoading && scripts.length === 0 ? (
-            <p className="empty-state">暂无剧本，填写参数后生成第一条短视频脚本。</p>
-          ) : null}
-
           <div className="script-items">
             {scripts.map((script) => (
               <article className="script-item" key={script.id}>
@@ -432,39 +493,136 @@ export function ScriptPanel() {
           <div className="detail-heading">
             <div>
               <h3>{selectedScript.title}</h3>
-              <p>
-                {selectedScript.narrativeFramework} · {selectedScript.visualStyle}
-              </p>
+              <p>{selectedScript.narrativeFramework}</p>
             </div>
             <span className="detail-duration">{selectedScript.durationSeconds}s</span>
           </div>
 
-          <div className="detail-grid">
-            <div>
-              <strong>生成模式</strong>
-              <p>{modeLabels[selectedScript.mode ?? 'auto_strategy']}</p>
-            </div>
-            <div>
-              <strong>参考视频</strong>
-              <p>{selectedScript.referenceVideoId || '未使用'}</p>
-            </div>
-            <div>
-              <strong>灵感模板</strong>
-              <p>{selectedScript.templateId || '未使用'}</p>
-            </div>
-            <div>
-              <strong>卖点</strong>
-              <p>{selectedScript.sellingPoints.join('、')}</p>
-            </div>
+          <div className="intervention-grid">
+            <form className="intervention-panel" onSubmit={handleUpdateScript}>
+              <h3>剧本编辑</h3>
+              <label>
+                <span>标题</span>
+                <input
+                  value={scriptEdit.title}
+                  onChange={(event) => setScriptEdit({ ...scriptEdit, title: event.target.value })}
+                />
+              </label>
+              <label>
+                <span>目标人群</span>
+                <input
+                  value={scriptEdit.targetAudience}
+                  onChange={(event) =>
+                    setScriptEdit({ ...scriptEdit, targetAudience: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                <span>卖点</span>
+                <input
+                  value={scriptEdit.sellingPoints}
+                  onChange={(event) =>
+                    setScriptEdit({ ...scriptEdit, sellingPoints: event.target.value })
+                  }
+                />
+              </label>
+              <button type="submit">保存剧本修改</button>
+            </form>
+
+            <form className="intervention-panel" onSubmit={handleRegenerate}>
+              <h3>Prompt 微调与因子替换</h3>
+              <label>
+                <span>Prompt 微调</span>
+                <input
+                  value={promptAdjustment}
+                  onChange={(event) => setPromptAdjustment(event.target.value)}
+                  placeholder="更活泼、更适合 TikTok Shop"
+                />
+              </label>
+              <label>
+                <span>视觉风格</span>
+                <input
+                  value={factorReplacement.visualStyle}
+                  onChange={(event) =>
+                    setFactorReplacement({ ...factorReplacement, visualStyle: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                <span>BGM 风格</span>
+                <input
+                  value={factorReplacement.bgmStyle}
+                  onChange={(event) =>
+                    setFactorReplacement({ ...factorReplacement, bgmStyle: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                <span>字幕风格</span>
+                <input
+                  value={factorReplacement.captionStyle}
+                  onChange={(event) =>
+                    setFactorReplacement({ ...factorReplacement, captionStyle: event.target.value })
+                  }
+                />
+              </label>
+              <button type="submit">重新生成</button>
+            </form>
           </div>
 
-          <div className="constraint-row">
-            {selectedScript.constraints.map((constraint) => (
-              <span className="constraint-chip" key={constraint}>
-                {constraint}
-              </span>
-            ))}
-          </div>
+          <form className="scene-editor-form" onSubmit={handleAddScene}>
+            <h3>新增分镜</h3>
+            <input
+              value={sceneForm.title}
+              onChange={(event) => setSceneForm({ ...sceneForm, title: event.target.value })}
+              placeholder="标题"
+              required
+            />
+            <input
+              value={sceneForm.narration}
+              onChange={(event) => setSceneForm({ ...sceneForm, narration: event.target.value })}
+              placeholder="口播"
+              required
+            />
+            <input
+              value={sceneForm.visualPrompt}
+              onChange={(event) => setSceneForm({ ...sceneForm, visualPrompt: event.target.value })}
+              placeholder="画面提示"
+              required
+            />
+            <input
+              value={sceneForm.cameraMovement}
+              onChange={(event) =>
+                setSceneForm({ ...sceneForm, cameraMovement: event.target.value })
+              }
+              placeholder="镜头运动"
+              required
+            />
+            <input
+              value={sceneForm.bgmSuggestion}
+              onChange={(event) =>
+                setSceneForm({ ...sceneForm, bgmSuggestion: event.target.value })
+              }
+              placeholder="BGM"
+              required
+            />
+            <input
+              value={sceneForm.caption}
+              onChange={(event) => setSceneForm({ ...sceneForm, caption: event.target.value })}
+              placeholder="字幕"
+              required
+            />
+            <input
+              max={15}
+              min={3}
+              type="number"
+              value={sceneForm.durationSeconds}
+              onChange={(event) =>
+                setSceneForm({ ...sceneForm, durationSeconds: Number(event.target.value) })
+              }
+            />
+            <button type="submit">新增分镜</button>
+          </form>
 
           <div className="scene-list">
             {selectedScript.scenes.map((scene) => (
@@ -474,26 +632,39 @@ export function ScriptPanel() {
                   <h4>{scene.title}</h4>
                   <strong className="scene-duration">{scene.durationSeconds}s</strong>
                 </div>
-                <p>
-                  <strong>口播：</strong>
-                  {scene.narration}
-                </p>
-                <p>
-                  <strong>画面：</strong>
-                  {scene.visualPrompt}
-                </p>
-                <p>
-                  <strong>镜头：</strong>
-                  {scene.cameraMovement}
-                </p>
-                <p>
-                  <strong>字幕：</strong>
-                  {scene.caption}
-                </p>
-                <p>
-                  <strong>BGM：</strong>
-                  {scene.bgmSuggestion}
-                </p>
+                <textarea
+                  value={scene.narration}
+                  onChange={(event) =>
+                    void handlePatchScene(scene, { narration: event.target.value })
+                  }
+                />
+                <textarea
+                  value={scene.visualPrompt}
+                  onChange={(event) =>
+                    void handlePatchScene(scene, { visualPrompt: event.target.value })
+                  }
+                />
+                <input
+                  value={scene.cameraMovement}
+                  onChange={(event) =>
+                    void handlePatchScene(scene, { cameraMovement: event.target.value })
+                  }
+                />
+                <input
+                  value={scene.bgmSuggestion}
+                  onChange={(event) =>
+                    void handlePatchScene(scene, { bgmSuggestion: event.target.value })
+                  }
+                />
+                <input
+                  value={scene.caption}
+                  onChange={(event) =>
+                    void handlePatchScene(scene, { caption: event.target.value })
+                  }
+                />
+                <button type="button" onClick={() => void handleRemoveScene(scene.id)}>
+                  删除分镜
+                </button>
               </article>
             ))}
           </div>

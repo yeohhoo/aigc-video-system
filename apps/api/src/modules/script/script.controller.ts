@@ -1,5 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { CreateScriptSceneDto } from './dto/create-script-scene.dto';
 import { GenerateScriptDto } from './dto/generate-script.dto';
+import { RegenerateScriptDto } from './dto/regenerate-script.dto';
+import { UpdateScriptSceneDto } from './dto/update-script-scene.dto';
+import { UpdateScriptDto } from './dto/update-script.dto';
 import { ScriptService } from './script.service';
 
 @Controller('scripts')
@@ -39,6 +43,35 @@ export class ScriptController {
   @Post('generate')
   generate(@Body() dto: GenerateScriptDto) {
     return this.scriptService.generate(dto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateScriptDto) {
+    return this.scriptService.update(id, dto);
+  }
+
+  @Post(':id/scenes')
+  addScene(@Param('id') id: string, @Body() dto: CreateScriptSceneDto) {
+    return this.scriptService.addScene(id, dto);
+  }
+
+  @Patch(':id/scenes/:sceneId')
+  updateScene(
+    @Param('id') id: string,
+    @Param('sceneId') sceneId: string,
+    @Body() dto: UpdateScriptSceneDto,
+  ) {
+    return this.scriptService.updateScene(id, sceneId, dto);
+  }
+
+  @Delete(':id/scenes/:sceneId')
+  removeScene(@Param('id') id: string, @Param('sceneId') sceneId: string) {
+    return this.scriptService.removeScene(id, sceneId);
+  }
+
+  @Post(':id/regenerate')
+  regenerate(@Param('id') id: string, @Body() dto: RegenerateScriptDto) {
+    return this.scriptService.regenerate(id, dto);
   }
 
   @Delete(':id')

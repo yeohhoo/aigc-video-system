@@ -1,6 +1,6 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { AI_PROVIDER, AIProvider } from '../../integrations/provider.interface';
+import { CreationPipelineService } from './creation-pipeline.service';
 import { CreateCreationDto } from './dto/create-creation.dto';
 import {
   CreationAspectRatio,
@@ -14,7 +14,7 @@ import {
 export class CreationService {
   private readonly tasks: CreationTask[] = [];
 
-  constructor(@Inject(AI_PROVIDER) private readonly provider: AIProvider) {}
+  constructor(private readonly pipelineService: CreationPipelineService) {}
 
   list(): CreationTask[] {
     return [...this.tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -63,14 +63,15 @@ export class CreationService {
     const now = new Date().toISOString();
 
     task.status = 'running';
-    task.progress = 35;
+    task.progress = 20;
     task.updatedAt = now;
 
-    task.scenes = await Promise.all(task.scenes.map((scene) => this.completeScene(task, scene)));
+    const result = await this.pipelineService.run(task);
+    task.scenes = result.scenes;
     task.status = 'completed';
     task.progress = 100;
-    task.previewUrl = `https://mock.cdn.local/previews/${task.id}.mp4`;
-    task.exportUrl = `https://mock.cdn.local/exports/${task.id}-${task.resolution}.mp4`;
+    task.previewUrl = result.previewUrl;
+    task.exportUrl = result.exportUrl;
     task.errorMessage = undefined;
     task.updatedAt = new Date().toISOString();
 
@@ -102,35 +103,15 @@ export class CreationService {
       imageUrl: undefined,
       videoClipUrl: undefined,
       ttsUrl: undefined,
+      subtitleText: undefined,
+      subtitleFileUrl: undefined,
+      bgmStyle: undefined,
+      bgmUrl: undefined,
+      renderTrace: [],
       durationSeconds: 5,
       status: 'pending',
       provider: 'mock',
     }));
-  }
-
-  private async completeScene(task: CreationTask, scene: CreationScene): Promise<CreationScene> {
-    const image = await this.provider.generateImage({
-      prompt: scene.visualPrompt,
-      aspectRatio: task.aspectRatio,
-    });
-    const video = await this.provider.generateVideoFromImage({
-      imageUrl: image.imageUrl,
-      prompt: scene.visualPrompt,
-    });
-    const speech = await this.provider.generateSpeech({
-      text: scene.narration,
-      language: task.language,
-      voiceStyle: task.voiceStyle,
-    });
-
-    return {
-      ...scene,
-      status: 'completed',
-      provider: this.provider.name,
-      imageUrl: image.imageUrl,
-      videoClipUrl: video.videoUrl,
-      ttsUrl: speech.audioUrl,
-    };
   }
 
   private validateCreateDto(dto: CreateCreationDto) {
