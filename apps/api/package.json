@@ -6,7 +6,8 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "node --test -r ts-node/register src/integrations/volcengine/volcengine-image.service.spec.ts"
   },
   "dependencies": {
     "@aigc-video/shared": "workspace:*",

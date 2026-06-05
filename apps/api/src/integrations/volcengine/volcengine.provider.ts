@@ -11,6 +11,7 @@ import {
   GenerateVideoFromTextInput,
   GenerateVideoOutput,
 } from '../provider.types';
+import { VolcengineImageService } from './volcengine-image.service';
 import { VolcengineTtsService } from './volcengine-tts.service';
 import { VolcengineRequest, VolcengineResponse } from './volcengine.types';
 
@@ -20,18 +21,12 @@ export class VolcengineProvider implements AIProvider {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly volcengineImageService: VolcengineImageService,
     private readonly volcengineTtsService: VolcengineTtsService,
   ) {}
 
   async generateImage(input: GenerateImageInput): Promise<GenerateImageOutput> {
-    const response = this.parseResponse(
-      this.buildRequest('text-to-image', input),
-      `https://mock.local/image/volcengine-${randomUUID()}.jpg`,
-    );
-
-    return {
-      imageUrl: response.url,
-    };
+    return this.volcengineImageService.generateImage(input);
   }
 
   async generateVideoFromText(input: GenerateVideoFromTextInput): Promise<GenerateVideoOutput> {

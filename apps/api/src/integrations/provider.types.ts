@@ -11,6 +11,7 @@ export interface GenerateImageInput {
 
 export interface GenerateImageOutput {
   imageUrl: string;
+  provider?: ProviderType;
 }
 
 export interface GenerateVideoFromTextInput {

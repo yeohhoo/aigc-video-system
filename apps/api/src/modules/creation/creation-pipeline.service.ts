@@ -10,6 +10,16 @@ interface PipelineResult {
   traces: TaskTrace[];
 }
 
+export class CreationPipelineError extends Error {
+  constructor(
+    message: string,
+    readonly traces: TaskTrace[],
+    readonly scenes: CreationScene[] = [],
+  ) {
+    super(message);
+  }
+}
+
 @Injectable()
 export class CreationPipelineService {
   constructor(@Inject(AI_PROVIDER) private readonly provider: AIProvider) {}
@@ -18,10 +28,18 @@ export class CreationPipelineService {
     const scenes: CreationScene[] = [];
     const traces: TaskTrace[] = [];
 
-    for (const scene of task.scenes) {
-      const rendered = await this.renderScene(task, scene);
-      scenes.push(rendered);
-      traces.push(...this.toTaskTraces(task.id, rendered.renderTrace));
+    try {
+      for (const scene of task.scenes) {
+        const rendered = await this.renderScene(task, scene);
+        scenes.push(rendered);
+        traces.push(...this.toTaskTraces(task.id, rendered.renderTrace));
+      }
+    } catch (error) {
+      if (error instanceof CreationPipelineError) {
+        traces.push(...error.traces);
+        throw new CreationPipelineError(error.message, traces, scenes);
+      }
+      throw error;
     }
 
     const finalVideo = this.traceTaskSync(task.id, 'composeFinalVideo', 'mock-composer', () =>
@@ -51,49 +69,54 @@ export class CreationPipelineService {
   private async renderScene(task: CreationTask, scene: CreationScene): Promise<CreationScene> {
     const renderTrace: RenderTrace[] = [];
 
-    const image = await this.trace(renderTrace, 'generateImage', async () =>
-      this.provider.generateImage({
-        prompt: scene.visualPrompt,
-        aspectRatio: task.aspectRatio,
-      }),
-    );
+    try {
+      const image = await this.trace(renderTrace, 'generateImage', async () =>
+        this.provider.generateImage({
+          prompt: scene.visualPrompt,
+          aspectRatio: task.aspectRatio,
+        }),
+      );
 
-    const speech = await this.trace(renderTrace, 'generateSpeech', async () =>
-      this.provider.generateSpeech({
-        text: scene.narration,
-        language: task.language,
-        voiceStyle: task.voiceStyle,
-      }),
-    );
+      const speech = await this.trace(renderTrace, 'generateSpeech', async () =>
+        this.provider.generateSpeech({
+          text: scene.narration,
+          language: task.language,
+          voiceStyle: task.voiceStyle,
+        }),
+      );
 
-    const subtitle = this.traceSync(renderTrace, 'generateSubtitle', () =>
-      this.generateSubtitle(task, scene),
-    );
+      const subtitle = this.traceSync(renderTrace, 'generateSubtitle', () =>
+        this.generateSubtitle(task, scene),
+      );
 
-    await this.trace(renderTrace, 'generateVideo', async () =>
-      this.provider.generateVideoFromImage({
+      await this.trace(renderTrace, 'generateVideo', async () =>
+        this.provider.generateVideoFromImage({
+          imageUrl: image.imageUrl,
+          prompt: scene.visualPrompt,
+        }),
+      );
+
+      const segment = this.traceSync(renderTrace, 'composeSegment', () =>
+        this.composeSegment(task, scene),
+      );
+
+      return {
+        ...scene,
+        status: 'completed',
+        provider: this.provider.name,
         imageUrl: image.imageUrl,
-        prompt: scene.visualPrompt,
-      }),
-    );
-
-    const segment = this.traceSync(renderTrace, 'composeSegment', () =>
-      this.composeSegment(task, scene),
-    );
-
-    return {
-      ...scene,
-      status: 'completed',
-      provider: this.provider.name,
-      imageUrl: image.imageUrl,
-      videoClipUrl: segment.videoClipUrl,
-      ttsUrl: speech.audioUrl,
-      subtitleText: subtitle.subtitleText,
-      subtitleFileUrl: subtitle.subtitleFileUrl,
-      bgmStyle: task.bgmStyle ?? 'default ecommerce bgm',
-      bgmUrl: `https://mock.local/audio/bgm-${task.id}-${scene.order}.mp3`,
-      renderTrace,
-    };
+        videoClipUrl: segment.videoClipUrl,
+        ttsUrl: speech.audioUrl,
+        subtitleText: subtitle.subtitleText,
+        subtitleFileUrl: subtitle.subtitleFileUrl,
+        bgmStyle: task.bgmStyle ?? 'default ecommerce bgm',
+        bgmUrl: `https://mock.local/audio/bgm-${task.id}-${scene.order}.mp3`,
+        renderTrace,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Pipeline scene render failed';
+      throw new CreationPipelineError(message, this.toTaskTraces(task.id, renderTrace));
+    }
   }
 
   private async trace<T>(
@@ -102,15 +125,26 @@ export class CreationPipelineService {
     operation: () => Promise<T>,
   ): Promise<T> {
     const startedAt = new Date().toISOString();
-    const result = await operation();
-    traces.push({
-      provider: this.provider.name,
-      step,
-      status: 'completed',
-      startedAt,
-      finishedAt: new Date().toISOString(),
-    });
-    return result;
+    try {
+      const result = await operation();
+      traces.push({
+        provider: this.provider.name,
+        step,
+        status: 'completed',
+        startedAt,
+        finishedAt: new Date().toISOString(),
+      });
+      return result;
+    } catch (error) {
+      traces.push({
+        provider: this.provider.name,
+        step,
+        status: 'failed',
+        startedAt,
+        finishedAt: new Date().toISOString(),
+      });
+      throw error;
+    }
   }
 
   private traceSync<T>(traces: RenderTrace[], step: string, operation: () => T): T {
@@ -148,7 +182,7 @@ export class CreationPipelineService {
       provider: trace.provider,
       step: trace.step,
       status: trace.status,
-      message: `${trace.step} completed by ${trace.provider}.`,
+      message: `${trace.step} ${trace.status} by ${trace.provider}.`,
       startedAt: trace.startedAt,
       finishedAt: trace.finishedAt,
     }));

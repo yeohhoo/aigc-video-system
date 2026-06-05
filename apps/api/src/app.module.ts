@@ -5,6 +5,14 @@ import { MaterialModule } from './modules/material/material.module';
 import { ScriptModule } from './modules/script/script.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), MaterialModule, ScriptModule, CreationModule],
+  imports: [
+    ConfigModule.forRoot({
+      envFilePath: ['.env', '../../.env'],
+      isGlobal: true,
+    }),
+    MaterialModule,
+    ScriptModule,
+    CreationModule,
+  ],
 })
 export class AppModule {}

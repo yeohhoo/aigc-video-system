@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { ProviderType } from '../../integrations/provider.types';
-import { CreationPipelineService } from './creation-pipeline.service';
+import { CreationPipelineError, CreationPipelineService } from './creation-pipeline.service';
 import { CreateCreationDto } from './dto/create-creation.dto';
 import {
   CreationAspectRatio,
@@ -195,6 +195,16 @@ export class CreationService {
       task.errorMessage = undefined;
       task.updatedAt = new Date().toISOString();
     } catch (error) {
+      if (error instanceof CreationPipelineError) {
+        task.traces.push(...error.traces);
+        task.scenes = [
+          ...error.scenes,
+          ...task.scenes.slice(error.scenes.length).map((scene) => ({
+            ...scene,
+            status: scene.status === 'pending' ? 'failed' : scene.status,
+          })),
+        ];
+      }
       this.failTask(task, error instanceof Error ? error.message : 'Pipeline failed');
     }
   }

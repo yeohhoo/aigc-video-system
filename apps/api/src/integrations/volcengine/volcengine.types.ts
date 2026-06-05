@@ -66,6 +66,106 @@ export interface VolcengineTtsResult {
   audioUrl: string;
 }
 
+export interface VolcengineImageRequest {
+  model: string;
+  prompt: string;
+  response_format: 'url' | 'b64_json';
+  size: string;
+  n: number;
+}
+
+export interface VolcengineChatImageRequest {
+  model: string;
+  messages: Array<{
+    role: 'system' | 'user';
+    content: string;
+  }>;
+  temperature: number;
+  stream: false;
+}
+
+export interface VolcengineImageResponse {
+  code?: number | string;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+  message?: string;
+  image?:
+    | string
+    | {
+        url?: string;
+        image_url?: string;
+        b64_json?: string;
+      };
+  imageUrl?: string;
+  image_url?: string;
+  b64_json?: string;
+  output_text?: string;
+  output?: {
+    text?: string;
+    image?:
+      | string
+      | {
+          url?: string;
+          image_url?: string;
+          b64_json?: string;
+        };
+    images?: Array<{
+      url?: string;
+      image_url?: string;
+      b64_json?: string;
+    }>;
+  };
+  data?: Array<{
+    url?: string;
+    image_url?: string;
+    b64_json?: string;
+  }>;
+  images?: Array<{
+    url?: string;
+    image_url?: string;
+    b64_json?: string;
+  }>;
+  image_urls?: string[];
+  result?: {
+    url?: string;
+    image_url?: string;
+    b64_json?: string;
+    content?: string;
+    data?: Array<{
+      url?: string;
+      image_url?: string;
+      b64_json?: string;
+    }>;
+  };
+  choices?: Array<{
+    message?: {
+      content?:
+        | string
+        | Array<{
+            type?: string;
+            text?: string;
+            image_url?:
+              | string
+              | {
+                  url?: string;
+                };
+          }>;
+      tool_calls?: Array<{
+        function?: {
+          arguments?: string;
+        };
+      }>;
+    };
+  }>;
+}
+
+export interface VolcengineImageResult {
+  imageUrl: string;
+  provider: 'volcengine';
+}
+
 export interface VolcengineRequest {
   operation: string;
   endpoint: string;
