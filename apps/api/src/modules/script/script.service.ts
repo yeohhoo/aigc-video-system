@@ -241,7 +241,7 @@ export class ScriptService {
     const now = new Date().toISOString();
     const script: Script = {
       id: randomUUID(),
-      title: `${dto.productName.trim()} ${durationSeconds}s 带货短视频剧本`,
+      title: `${dto.productName.trim()} ${durationSeconds}s 带货短视频脚本`,
       materialId: dto.materialId.trim(),
       productName: dto.productName.trim(),
       productCategory: dto.productCategory.trim(),
@@ -344,7 +344,7 @@ export class ScriptService {
       visualPrompt: `${visualStyle}。${scene.visualPrompt}`,
       bgmSuggestion: bgmStyle ?? scene.bgmSuggestion,
       caption: captionStyle ? `${captionStyle}：${scene.caption}` : scene.caption,
-      constraints: [...scene.constraints, '由规则模板快速重生成'],
+      constraints: [...scene.constraints, '由规则模板快速重新生成'],
     }));
     const script: Script = {
       ...source,

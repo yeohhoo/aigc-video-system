@@ -22,10 +22,10 @@ const emptyForm: CreateCreationDto = {
 };
 
 const statusFlow: Array<{ status: CreationStatus; label: string }> = [
-  { status: 'pending', label: 'Pending' },
-  { status: 'queued', label: 'Queue' },
-  { status: 'running', label: 'Running' },
-  { status: 'completed', label: 'Completed' },
+  { status: 'pending', label: '待启动' },
+  { status: 'queued', label: '排队中' },
+  { status: 'running', label: '生成中' },
+  { status: 'completed', label: '已完成' },
 ];
 
 const statusRank: Record<CreationStatus, number> = {
@@ -225,7 +225,7 @@ export function CreationPanel() {
       <div className="workspace-heading">
         <div>
           <h2>长任务生成与观测</h2>
-          <p>模拟排队、进度推进、故障重试、Trace 与诊断信息，支撑视频创作任务管理。</p>
+          <p>模拟排队、进度推进、失败重试、Trace 与诊断信息，支撑视频创作任务管理。</p>
         </div>
         <span className="count-badge creation-count">{taskCountText}</span>
       </div>
@@ -234,7 +234,7 @@ export function CreationPanel() {
         <form className="creation-form" onSubmit={handleCreate}>
           <h3>创建任务</h3>
           <label>
-            <span>剧本 ID</span>
+            <span>脚本 ID</span>
             <input
               value={form.scriptId}
               onChange={(event) => setForm({ ...form, scriptId: event.target.value })}
@@ -350,14 +350,14 @@ export function CreationPanel() {
                     disabled={runningTaskId === task.id || task.status !== 'failed'}
                     onClick={() => void handleRetry(task.id)}
                   >
-                    Retry
+                    重试
                   </button>
                   <button
                     type="button"
                     disabled={!['pending', 'queued'].includes(task.status)}
                     onClick={() => void handleCancel(task.id)}
                   >
-                    Cancel
+                    取消
                   </button>
                   <button type="button" onClick={() => void handleDelete(task.id)}>
                     删除

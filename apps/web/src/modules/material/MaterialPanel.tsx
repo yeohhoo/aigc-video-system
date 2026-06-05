@@ -111,7 +111,7 @@ export function MaterialPanel() {
       <div className="workspace-heading">
         <div>
           <h2>素材库</h2>
-          <p>为剧本生成和视频创作沉淀商品图片、视频和参考素材。</p>
+          <p>为脚本生成和视频创作沉淀商品图片、视频和参考素材。</p>
         </div>
         <span className="count-badge">{materialCountText}</span>
       </div>

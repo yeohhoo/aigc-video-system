@@ -73,7 +73,7 @@ export function ScriptPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const scriptCountText = useMemo(() => `${scripts.length} 个剧本`, [scripts.length]);
+  const scriptCountText = useMemo(() => `${scripts.length} 个脚本`, [scripts.length]);
 
   useEffect(() => {
     void loadInitialData();
@@ -99,7 +99,7 @@ export function ScriptPanel() {
         fetch('/api/scripts/templates'),
       ]);
       if (!scriptResponse.ok || !referenceResponse.ok || !templateResponse.ok) {
-        throw new Error('剧本资源获取失败');
+        throw new Error('脚本资源获取失败');
       }
       const scriptData = (await scriptResponse.json()) as Script[];
       const referenceData = (await referenceResponse.json()) as ReferenceVideo[];
@@ -116,7 +116,7 @@ export function ScriptPanel() {
         templateId: current.templateId || templateData[0]?.id || '',
       }));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '剧本资源获取失败');
+      setError(requestError instanceof Error ? requestError.message : '脚本资源获取失败');
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +131,7 @@ export function ScriptPanel() {
       },
     });
     if (!response.ok) {
-      throw new Error('剧本操作失败');
+      throw new Error('脚本操作失败');
     }
     const updated = (await response.json()) as Script;
     setSelectedScript(updated);
@@ -168,7 +168,7 @@ export function ScriptPanel() {
       }));
       setSellingPointInput('');
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '剧本生成失败');
+      setError(requestError instanceof Error ? requestError.message : '脚本生成失败');
     } finally {
       setIsGenerating(false);
     }
@@ -178,10 +178,10 @@ export function ScriptPanel() {
     setError(null);
     try {
       const response = await fetch(`/api/scripts/${id}`);
-      if (!response.ok) throw new Error('剧本详情获取失败');
+      if (!response.ok) throw new Error('脚本详情获取失败');
       setSelectedScript((await response.json()) as Script);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '剧本详情获取失败');
+      setError(requestError instanceof Error ? requestError.message : '脚本详情获取失败');
     }
   }
 
@@ -189,11 +189,11 @@ export function ScriptPanel() {
     setError(null);
     try {
       const response = await fetch(`/api/scripts/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('剧本删除失败');
+      if (!response.ok) throw new Error('脚本删除失败');
       setScripts((current) => current.filter((script) => script.id !== id));
       setSelectedScript((current) => (current?.id === id ? null : current));
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '剧本删除失败');
+      setError(requestError instanceof Error ? requestError.message : '脚本删除失败');
     }
   }
 
@@ -281,11 +281,11 @@ export function ScriptPanel() {
   }
 
   return (
-    <section className="script-workspace" aria-label="剧本生成">
+    <section className="script-workspace" aria-label="脚本生成">
       <div className="workspace-heading">
         <div>
-          <h2>剧本生成</h2>
-          <p>支持参考视频、灵感模板、AI 生成与人工干预的短视频剧本生产。</p>
+          <h2>脚本生成</h2>
+          <p>支持参考视频、灵感模板、AI 生成与人工干预的短视频脚本生产。</p>
         </div>
         <span className="count-badge script-count">{scriptCountText}</span>
       </div>
@@ -306,7 +306,7 @@ export function ScriptPanel() {
               >
                 <strong>{reference.title}</strong>
                 <span className="inspiration-meta-line">
-                  {reference.productCategory} · {reference.sourcePlatform}
+                  {reference.productCategory} / {reference.sourcePlatform}
                 </span>
               </button>
             ))}
@@ -452,19 +452,19 @@ export function ScriptPanel() {
             />
           </label>
           <button type="submit" disabled={isGenerating}>
-            {isGenerating ? '生成中...' : '生成剧本'}
+            {isGenerating ? '生成中...' : '生成脚本'}
           </button>
         </form>
 
         <div className="script-list">
           <div className="list-toolbar">
-            <h3>剧本列表</h3>
+            <h3>脚本列表</h3>
             <button type="button" className="ghost-button" onClick={() => void loadInitialData()}>
               刷新
             </button>
           </div>
           {error ? <p className="error-message">{error}</p> : null}
-          {isLoading ? <p className="empty-state">正在加载剧本资源...</p> : null}
+          {isLoading ? <p className="empty-state">正在加载脚本资源...</p> : null}
           <div className="script-items">
             {scripts.map((script) => (
               <article className="script-item" key={script.id}>
@@ -475,7 +475,7 @@ export function ScriptPanel() {
                 >
                   <strong>{script.title}</strong>
                   <span className="script-meta-line">
-                    {script.productName} · {script.durationSeconds}s ·{' '}
+                    {script.productName} / {script.durationSeconds}s /{' '}
                     {modeLabels[script.mode ?? 'auto_strategy']}
                   </span>
                 </button>
@@ -489,7 +489,7 @@ export function ScriptPanel() {
       </div>
 
       {selectedScript ? (
-        <section className="script-detail" aria-label="剧本详情">
+        <section className="script-detail" aria-label="脚本详情">
           <div className="detail-heading">
             <div>
               <h3>{selectedScript.title}</h3>
@@ -500,7 +500,7 @@ export function ScriptPanel() {
 
           <div className="intervention-grid">
             <form className="intervention-panel" onSubmit={handleUpdateScript}>
-              <h3>剧本编辑</h3>
+              <h3>脚本编辑</h3>
               <label>
                 <span>标题</span>
                 <input
@@ -526,7 +526,7 @@ export function ScriptPanel() {
                   }
                 />
               </label>
-              <button type="submit">保存剧本修改</button>
+              <button type="submit">保存脚本修改</button>
             </form>
 
             <form className="intervention-panel" onSubmit={handleRegenerate}>

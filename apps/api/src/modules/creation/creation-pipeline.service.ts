@@ -58,7 +58,7 @@ export class CreationPipelineService {
           provider: 'mock-composer',
           step: 'composeFinalVideo',
           status: 'completed',
-          message: 'Final video composed with mock preview and export URLs.',
+          message: '最终视频已合成，并生成 mock 预览地址与导出地址。',
           startedAt: finalVideo.startedAt,
           finishedAt: finalVideo.finishedAt,
         },
@@ -111,12 +111,12 @@ export class CreationPipelineService {
         ttsUrl: speech.audioUrl,
         subtitleText: subtitle.subtitleText,
         subtitleFileUrl: subtitle.subtitleFileUrl,
-        bgmStyle: task.bgmStyle ?? 'default ecommerce bgm',
+        bgmStyle: task.bgmStyle ?? '默认电商背景音乐',
         bgmUrl: `https://mock.local/audio/bgm-${task.id}-${scene.order}.mp3`,
         renderTrace,
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Pipeline scene render failed';
+      const message = error instanceof Error ? error.message : 'Pipeline 分镜渲染失败';
       throw new CreationPipelineError(message, this.toTaskTraces(task.id, renderTrace));
     }
   }
@@ -184,7 +184,7 @@ export class CreationPipelineService {
       provider: trace.provider,
       step: trace.step,
       status: trace.status,
-      message: `${trace.step} ${trace.status} by ${trace.provider}.`,
+      message: `${trace.provider} 执行 ${trace.step}，状态：${trace.status}。`,
       startedAt: trace.startedAt,
       finishedAt: trace.finishedAt,
     }));

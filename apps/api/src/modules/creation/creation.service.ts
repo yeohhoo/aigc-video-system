@@ -130,7 +130,7 @@ export class CreationService {
     this.clearTimers(task.id);
     task.status = 'canceled';
     task.updatedAt = new Date().toISOString();
-    this.addTrace(task, 'mock-queue', 'cancel', 'canceled', 'Task canceled by user.');
+    this.addTrace(task, 'mock-queue', 'cancel', 'canceled', '用户取消了创作任务。');
     return task;
   }
 
@@ -147,7 +147,7 @@ export class CreationService {
     task.status = 'queued';
     task.progress = 0;
     task.updatedAt = new Date().toISOString();
-    this.addTrace(task, 'mock-queue', 'queue', 'queued', 'Task entered in-memory queue.');
+    this.addTrace(task, 'mock-queue', 'queue', 'queued', '任务已进入内存队列。');
 
     const timers = [
       setTimeout(() => this.markRunning(task.id, 20), 250),
@@ -165,7 +165,7 @@ export class CreationService {
     task.status = 'running';
     task.progress = progress;
     task.updatedAt = new Date().toISOString();
-    this.addTrace(task, 'mock-worker', 'queue', 'running', `Task progress reached ${progress}%.`);
+    this.addTrace(task, 'mock-worker', 'queue', 'running', `任务进度推进到 ${progress}%。`);
   }
 
   private advanceRunning(id: string, progress: number) {
@@ -173,12 +173,12 @@ export class CreationService {
     if (task.status !== 'running') return;
     const bypassFailure = task.title.toLowerCase().includes('smoke');
     if (!bypassFailure && this.shouldInjectMockFailure()) {
-      this.failTask(task, `Mock provider failure at ${progress}%.`);
+      this.failTask(task, `Mock Provider 在 ${progress}% 进度处模拟失败。`);
       return;
     }
     task.progress = progress;
     task.updatedAt = new Date().toISOString();
-    this.addTrace(task, 'mock-worker', 'queue', 'running', `Task progress reached ${progress}%.`);
+    this.addTrace(task, 'mock-worker', 'queue', 'running', `任务进度推进到 ${progress}%。`);
   }
 
   private async completeTask(id: string) {
@@ -205,7 +205,7 @@ export class CreationService {
           })),
         ];
       }
-      this.failTask(task, error instanceof Error ? error.message : 'Pipeline failed');
+      this.failTask(task, error instanceof Error ? error.message : 'Pipeline 执行失败');
     }
   }
 
@@ -247,8 +247,8 @@ export class CreationService {
       id: randomUUID(),
       order: index + 1,
       scriptSceneId: `${scriptId}-scene-${index + 1}`,
-      visualPrompt: `Mock visual prompt for script scene ${index + 1}`,
-      narration: `Mock narration for script scene ${index + 1}`,
+      visualPrompt: `脚本分镜 ${index + 1} 的 mock 画面提示词`,
+      narration: `脚本分镜 ${index + 1} 的 mock 口播文案`,
       imageUrl: undefined,
       videoClipUrl: undefined,
       ttsUrl: undefined,
