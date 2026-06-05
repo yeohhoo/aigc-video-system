@@ -11,13 +11,17 @@ import {
   GenerateVideoFromTextInput,
   GenerateVideoOutput,
 } from '../provider.types';
+import { VolcengineTtsService } from './volcengine-tts.service';
 import { VolcengineRequest, VolcengineResponse } from './volcengine.types';
 
 @Injectable()
 export class VolcengineProvider implements AIProvider {
   readonly name = 'volcengine';
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly volcengineTtsService: VolcengineTtsService,
+  ) {}
 
   async generateImage(input: GenerateImageInput): Promise<GenerateImageOutput> {
     const response = this.parseResponse(
@@ -53,14 +57,7 @@ export class VolcengineProvider implements AIProvider {
   }
 
   async generateSpeech(input: GenerateSpeechInput): Promise<GenerateSpeechOutput> {
-    const response = this.parseResponse(
-      this.buildRequest('tts', input),
-      `https://mock.local/audio/volcengine-${randomUUID()}.mp3`,
-    );
-
-    return {
-      audioUrl: response.url,
-    };
+    return this.volcengineTtsService.generateSpeech(input);
   }
 
   private buildRequest(operation: string, payload: unknown): VolcengineRequest {

@@ -21,6 +21,51 @@ export interface TextToSpeechRequest {
   speed?: number;
 }
 
+export interface VolcengineTtsRequest {
+  app: {
+    appid: string;
+    token: string;
+    cluster: string;
+  };
+  user: {
+    uid: string;
+  };
+  audio: {
+    voice_type: string;
+    encoding: 'mp3';
+    speed_ratio: number;
+    rate: number;
+    language: 'cn' | 'en';
+  };
+  request: {
+    reqid: string;
+    text: string;
+    text_type: 'plain';
+    operation: 'query';
+  };
+}
+
+export interface VolcengineTtsResponse {
+  code?: number;
+  status_code?: number;
+  message?: string;
+  data?: string;
+  audio?: string;
+  audioUrl?: string;
+  url?: string;
+  result?: {
+    audio?: string;
+    audio_base64?: string;
+    audio_url?: string;
+    url?: string;
+  };
+  raw?: unknown;
+}
+
+export interface VolcengineTtsResult {
+  audioUrl: string;
+}
+
 export interface VolcengineRequest {
   operation: string;
   endpoint: string;

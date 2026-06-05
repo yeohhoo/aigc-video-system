@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
+import { ProviderType } from '../../integrations/provider.types';
 import { CreationPipelineService } from './creation-pipeline.service';
 import { CreateCreationDto } from './dto/create-creation.dto';
 import {
@@ -18,7 +20,10 @@ export class CreationService {
   private readonly tasks: CreationTask[] = [];
   private readonly timers = new Map<string, Array<ReturnType<typeof setTimeout>>>();
 
-  constructor(private readonly pipelineService: CreationPipelineService) {}
+  constructor(
+    private readonly pipelineService: CreationPipelineService,
+    private readonly configService: ConfigService,
+  ) {}
 
   list(): CreationTask[] {
     return [...this.tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -167,7 +172,7 @@ export class CreationService {
     const task = this.getById(id);
     if (task.status !== 'running') return;
     const bypassFailure = task.title.toLowerCase().includes('smoke');
-    if (!bypassFailure && Math.random() < 0.1) {
+    if (!bypassFailure && this.shouldInjectMockFailure()) {
       this.failTask(task, `Mock provider failure at ${progress}%.`);
       return;
     }
@@ -250,6 +255,11 @@ export class CreationService {
 
   private durationMs(startedAt: string, finishedAt: string): number {
     return Math.max(0, new Date(finishedAt).getTime() - new Date(startedAt).getTime());
+  }
+
+  private shouldInjectMockFailure(): boolean {
+    const providerType = this.configService.get<ProviderType>('PROVIDER_TYPE') ?? 'mock';
+    return providerType === 'mock' && Math.random() < 0.1;
   }
 
   private validateCreateDto(dto: CreateCreationDto) {
