@@ -17,15 +17,19 @@ export interface GenerateImageOutput {
 export interface GenerateVideoFromTextInput {
   prompt: string;
   durationSeconds: number;
+  aspectRatio?: ProviderAspectRatio;
 }
 
 export interface GenerateVideoOutput {
   videoUrl: string;
+  provider?: ProviderType;
 }
 
 export interface GenerateVideoFromImageInput {
   imageUrl: string;
   prompt: string;
+  durationSeconds?: number;
+  aspectRatio?: ProviderAspectRatio;
 }
 
 export interface GenerateSpeechInput {

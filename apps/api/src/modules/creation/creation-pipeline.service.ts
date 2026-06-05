@@ -89,10 +89,12 @@ export class CreationPipelineService {
         this.generateSubtitle(task, scene),
       );
 
-      await this.trace(renderTrace, 'generateVideo', async () =>
+      const video = await this.trace(renderTrace, 'generateVideoFromImage', async () =>
         this.provider.generateVideoFromImage({
           imageUrl: image.imageUrl,
           prompt: scene.visualPrompt,
+          durationSeconds: scene.durationSeconds,
+          aspectRatio: task.aspectRatio,
         }),
       );
 
@@ -105,7 +107,7 @@ export class CreationPipelineService {
         status: 'completed',
         provider: this.provider.name,
         imageUrl: image.imageUrl,
-        videoClipUrl: segment.videoClipUrl,
+        videoClipUrl: video.videoUrl || segment.videoClipUrl,
         ttsUrl: speech.audioUrl,
         subtitleText: subtitle.subtitleText,
         subtitleFileUrl: subtitle.subtitleFileUrl,

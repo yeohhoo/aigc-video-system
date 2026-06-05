@@ -166,6 +166,55 @@ export interface VolcengineImageResult {
   provider: 'volcengine';
 }
 
+export interface VolcengineVideoRequest {
+  model: string;
+  content: Array<{
+    type: 'text' | 'image_url';
+    text?: string;
+    image_url?: {
+      url: string;
+    };
+  }>;
+  duration?: number;
+  aspect_ratio?: string;
+}
+
+export interface VolcengineVideoResponse {
+  code?: number | string;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+  message?: string;
+  id?: string;
+  task_id?: string;
+  status?: string;
+  url?: string;
+  videoUrl?: string;
+  video_url?: string;
+  output?: {
+    video_url?: string;
+    url?: string;
+    task_id?: string;
+  };
+  result?: {
+    video_url?: string;
+    url?: string;
+    task_id?: string;
+  };
+  data?: {
+    video_url?: string;
+    url?: string;
+    task_id?: string;
+  };
+  content?: string;
+}
+
+export interface VolcengineVideoResult {
+  videoUrl: string;
+  provider: 'volcengine';
+}
+
 export interface VolcengineRequest {
   operation: string;
   endpoint: string;
